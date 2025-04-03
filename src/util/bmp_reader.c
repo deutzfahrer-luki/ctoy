@@ -2,8 +2,9 @@
 #include <stdio.h> // optional (stdio.h is already included in ctoy.h)
 
 // debugging!!!
-#define MEMPTR_READ_TEST 1
-
+#define DEBUGG_MEMPTR_READ 1
+#define DEBUGG_BMP_HEADER_READ 1
+ 
 struct m_image framebuffer = M_IMAGE_IDENTITY(); // initialize the struct (all set to zero in this case)
 
 typedef struct {
@@ -11,6 +12,24 @@ typedef struct {
    size_t size;
 } MEMPTR;
 
+#pragma pack(push, 1)
+typedef struct{
+   uint16_t Type;
+   uint32_t HSize;
+   uint32_t Reserved;
+   uint32_t OffBits;
+} BMPHeader;
+#pragma pack(pop);
+
+BMPHeader *bmpHeader = NULL;
+
+
+// every func in code:
+MEMPTR readFileToMemory(const char *filename);
+void assHead(MEMPTR* mem);
+void printHead();
+
+// Read file section
 MEMPTR readFileToMemory(const char *filename) {
    FILE *fp = fopen(filename, "rb");
 
@@ -48,7 +67,7 @@ MEMPTR readFileToMemory(const char *filename) {
 
    mtr.ptr = ptr;
    mtr.size = size;
-   #if MEMPTR_READ_TEST == 1
+   #if DEBUGG_MEMPTR_READ == 1
    printf("Pointer Address: %p\n", (void*)mtr.ptr); // Zeigeradresse ausgeben
    printf("Size: %zu\n", mtr.size);
    #endif
@@ -56,7 +75,31 @@ MEMPTR readFileToMemory(const char *filename) {
 }
 
 
+// Head section
+void assHead(MEMPTR* mem){
+   if(!mem || mem->size < sizeof(BMPHeader)){
+       printf("Error: (size = %zu)\n", mem->size);
+       return;
+   }
+   bmpHeader = (BMPHeader *)mem->ptr;
+   #if DEBUGG_BMP_HEADER_READ == 1
+   printHead();
+   #endif
+}
 
+void printHead(){
+   if(!bmpHeader){
+       return;
+   }
+   printf("BMP Header:\n");
+   printf("  Type:      0x%04X\n", bmpHeader->Type);
+   printf("  Size:      0x%08X bytes\n", bmpHeader->HSize);
+   printf("  Reserved:  0x%08X\n", bmpHeader->Reserved);
+   printf("  Offset:    0x%08X bytes\n", bmpHeader->OffBits);
+}
+
+
+// ctoy section
 void ctoy_begin(void)
 {
    printf("\nHello World!\n");
@@ -67,7 +110,8 @@ void ctoy_begin(void)
       printf("data/tetris.bmp not found\n");
       return;
    }
-   
+   assHead(&mem);
+
 }
 
 void ctoy_end(void)
