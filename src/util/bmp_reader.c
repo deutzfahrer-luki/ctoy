@@ -133,7 +133,10 @@ void assInfoHead(void *ptr) {
        printf("Error: Kein gültiger Speicher für Info Header\n");
        return;
    }
+
+   // Ensure that we are pointing to the correct part of the memory for the BMP info header
    bmpInfoHeader = (BMPInfoHeader *)ptr;
+   
    #if DEBUGG_BMP_INFO_HEADER_READ == 1
    printInfoHead();
    #endif
@@ -199,7 +202,7 @@ void ctoy_begin(void)
       return;
    }
    assHead(&mem);
-   assInfoHead(&mem.ptr + sizeof(BMPHeader));
+   assInfoHead((void *)(mem.ptr + sizeof(BMPHeader))); 
 
    if (!bmpHeader) {
       printf("Error: BMP Header is NULL\n");
@@ -210,7 +213,7 @@ void ctoy_begin(void)
       return;
    }
 
-   //drawSingleImage(&mem);
+   drawSingleImage(&mem);
 }
 
 
