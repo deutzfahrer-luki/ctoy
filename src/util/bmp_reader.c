@@ -155,6 +155,34 @@ void printInfoHead() {
 }
 
 
+// ImageDraq Sections
+void drawSingleImage() 
+{
+   int width = 256;
+   int height = 256;
+   int comp = 3;
+
+   m_image_create(&framebuffer, M_FLOAT, width, height, comp);
+
+   float *pixel = (float *)framebuffer.data; // we cast image data to float in this case
+   int y, x;
+
+   for (y = 0; y < height; y++) {
+      for (x = 0; x < width; x++) {
+         
+         pixel[0] = 1.0; // red
+         pixel[1] = 1.0; // green
+         pixel[2] = 0.0; // blue
+         pixel += comp;
+      }
+   }
+
+   // display the image to the frame buffer
+   // float linear is converted to ubyte sRGB on the fly
+   ctoy_swap_buffer(&framebuffer);
+}
+
+
 // ctoy section
 void ctoy_begin(void)
 {
@@ -168,10 +196,14 @@ void ctoy_begin(void)
    }
    assHead(&mem);
    assInfoHead(&mem.ptr + sizeof(BMPHeader));
+   drawSingleImage();
 }
 
+
 void ctoy_end(void)
-{}
+{
+   m_image_destroy(&framebuffer);
+}
 
 void ctoy_main_loop(void)
 {}
