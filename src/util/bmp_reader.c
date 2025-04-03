@@ -2,16 +2,20 @@
 #include <stdio.h> // optional (stdio.h is already included in ctoy.h)
 
 // debugging!!!
-#define DEBUGG_MEMPTR_READ 1
-#define DEBUGG_BMP_HEADER_READ 1
+#define DEBUGG_MEMPTR_READ 0
+#define DEBUGG_BMP_HEADER_READ 0
+#define DEBUGG_BMP_INFO_HEADER_READ 1
  
 struct m_image framebuffer = M_IMAGE_IDENTITY(); // initialize the struct (all set to zero in this case)
 
+// file struct
 typedef struct {
    uint8_t *ptr;
    size_t size;
 } MEMPTR;
 
+
+// Head struct
 #pragma pack(push, 1)
 typedef struct{
    uint16_t Type;
@@ -20,14 +24,34 @@ typedef struct{
    uint32_t OffBits;
 } BMPHeader;
 #pragma pack(pop);
-
 BMPHeader *bmpHeader = NULL;
+
+
+// InfoHead struct
+#pragma pack(push, 1)
+typedef struct {
+    uint32_t biSize;         // Größe des Info-Headers
+    int32_t biWidth;         // Breite des Bildes in Pixeln
+    int32_t biHeight;        // Höhe des Bildes in Pixeln
+    uint16_t biPlanes;       // Anzahl der Farbebenen (muss 1 sein)
+    uint16_t biBitCount;     // Farbtiefe (z. B. 24 für 24 Bit = 16,7 Mio Farben)
+    uint32_t biCompression;  // Kompressionstyp (0 = keine Kompression)
+    uint32_t biSizeImage;    // Größe des Bilddatenbereichs (kann 0 sein)
+    int32_t biXPelsPerMeter; // Horizontale Auflösung (Pixel pro Meter)
+    int32_t biYPelsPerMeter; // Vertikale Auflösung (Pixel pro Meter)
+    uint32_t biClrUsed;      // Anzahl der verwendeten Farben (0 = alle)
+    uint32_t biClrImportant; // Anzahl der wichtigen Farben (0 = alle)
+} BMPInfoHeader;
+#pragma pack(pop)
+BMPInfoHeader *bmpInfoHeader = NULL;
 
 
 // every func in code:
 MEMPTR readFileToMemory(const char *filename);
 void assHead(MEMPTR* mem);
 void printHead();
+void assInfoHead(void *ptr);
+void printInfoHead();
 
 // Read file section
 MEMPTR readFileToMemory(const char *filename) {
@@ -99,6 +123,38 @@ void printHead(){
 }
 
 
+// Info Head section
+void assInfoHead(void *ptr) {
+   if (!ptr) {
+       printf("Error: Kein gültiger Speicher für Info Header\n");
+       return;
+   }
+   bmpInfoHeader = (BMPInfoHeader *)ptr;
+   #if DEBUGG_BMP_INFO_HEADER_READ == 1
+   printInfoHead();
+   #endif
+}
+
+void printInfoHead() {
+   if (!bmpInfoHeader) {
+      printf("Error: kein InfoHeader vorhanden!\n");
+      return;
+   }
+   printf("BMP Info Header:\n");
+   printf(" Size: %u bytes\n", bmpInfoHeader->biSize);
+   printf(" Width: %d px\n", bmpInfoHeader->biWidth);
+   printf(" Height: %d px\n", bmpInfoHeader->biHeight);
+   printf(" Planes: %u\n", bmpInfoHeader->biPlanes);
+   printf(" Bit Count: %u bits per pixel\n", bmpInfoHeader->biBitCount);
+   printf(" Compression: %u\n", bmpInfoHeader->biCompression);
+   printf(" Image Size: %u bytes\n", bmpInfoHeader->biSizeImage);
+   printf(" X Pixels per Meter: %d\n", bmpInfoHeader->biXPelsPerMeter);
+   printf(" Y Pixels per Meter: %d\n", bmpInfoHeader->biYPelsPerMeter);
+   printf(" Colors Used: %u\n", bmpInfoHeader->biClrUsed);
+   printf(" Important Colors: %u\n", bmpInfoHeader->biClrImportant);
+}
+
+
 // ctoy section
 void ctoy_begin(void)
 {
@@ -111,7 +167,7 @@ void ctoy_begin(void)
       return;
    }
    assHead(&mem);
-
+   assInfoHead(&mem.ptr + sizeof(BMPHeader));
 }
 
 void ctoy_end(void)
