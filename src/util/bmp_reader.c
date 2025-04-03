@@ -2,10 +2,13 @@
 #include <stdio.h> // optional (stdio.h is already included in ctoy.h)
 
 // debugging!!!
-#define DEBUGG_MEMPTR_READ 0
-#define DEBUGG_BMP_HEADER_READ 0
+#define DEBUGG_MEMPTR_READ 1
+#define DEBUGG_BMP_HEADER_READ 1
 #define DEBUGG_BMP_INFO_HEADER_READ 1
- 
+
+// constants
+#define COMP 3
+
 struct m_image framebuffer = M_IMAGE_IDENTITY(); // initialize the struct (all set to zero in this case)
 
 // file struct
@@ -52,6 +55,7 @@ void assHead(MEMPTR* mem);
 void printHead();
 void assInfoHead(void *ptr);
 void printInfoHead();
+void drawSingleImage(MEMPTR *data);
 
 // Read file section
 MEMPTR readFileToMemory(const char *filename) {
@@ -156,29 +160,29 @@ void printInfoHead() {
 
 
 // ImageDraq Sections
-void drawSingleImage() 
+void drawSingleImage(MEMPTR *data) 
 {
-   int width = 256;
-   int height = 256;
-   int comp = 3;
-
-   m_image_create(&framebuffer, M_FLOAT, width, height, comp);
-
-   float *pixel = (float *)framebuffer.data; // we cast image data to float in this case
-   int y, x;
-
-   for (y = 0; y < height; y++) {
-      for (x = 0; x < width; x++) {
-         
-         pixel[0] = 1.0; // red
-         pixel[1] = 1.0; // green
-         pixel[2] = 0.0; // blue
-         pixel += comp;
-      }
+   m_image_create(&framebuffer, M_UBYTE, bmpInfoHeader->biWidth, bmpInfoHeader->biHeight, COMP);
+   if (!framebuffer.data) {
+      printf("Error: Failed to create framebuffer\n");
+      printf("Image width: %d, Image height: %d\n", bmpInfoHeader->biWidth, bmpInfoHeader->biHeight);
+      return;
    }
 
-   // display the image to the frame buffer
-   // float linear is converted to ubyte sRGB on the fly
+
+   for (size_t y = 0; y < bmpInfoHeader->biHeight; y++) {
+      for (size_t x = 0; x < bmpInfoHeader->biWidth; x++) {
+         uint8_t *fbpixel = framebuffer.data + (bmpInfoHeader->biWidth*y+x) * COMP;
+         uint8_t *pixel = data->ptr + bmpHeader->OffBits 
+             + (bmpInfoHeader->biHeight - 1 - y) * (bmpInfoHeader->biWidth * COMP) 
+             + x * COMP;
+         
+
+         fbpixel[0] = pixel[2];
+         fbpixel[1] = pixel[1];
+         fbpixel[2] = pixel[0];
+      }
+   }
    ctoy_swap_buffer(&framebuffer);
 }
 
@@ -196,7 +200,17 @@ void ctoy_begin(void)
    }
    assHead(&mem);
    assInfoHead(&mem.ptr + sizeof(BMPHeader));
-   drawSingleImage();
+
+   if (!bmpHeader) {
+      printf("Error: BMP Header is NULL\n");
+      return;
+   }
+   if (!bmpInfoHeader) {
+      printf("Error: BMP Info Header is NULL\n");
+      return;
+   }
+
+   //drawSingleImage(&mem);
 }
 
 
