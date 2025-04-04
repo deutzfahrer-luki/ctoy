@@ -239,12 +239,9 @@ void DrawAnimation(MEMPTR *data, int32_t frWidth, int32_t frHeight, uint32_t frI
 }
 
 
-// ctoy section
-void ctoy_begin(void)
+// laod Func
+void loadData()
 {
-   printf("Hello World!\n");
-   ctoy_window_title("Tetris");
-
    mem = readFileToMemory("data/tetris.bmp");
    if (mem.ptr == NULL) {
       printf("data/tetris.bmp not found\n");
@@ -261,6 +258,18 @@ void ctoy_begin(void)
       printf("Error: BMP Info Header is NULL\n");
       return;
    }
+}
+
+
+
+
+// ctoy section
+void ctoy_begin(void)
+{
+   printf("Hello World!\n");
+   ctoy_window_title("Tetris");
+   
+   loadData();
 
    #if SIGNLE_DRAW_PICTURE == 1
    drawSingleImage(&mem);
