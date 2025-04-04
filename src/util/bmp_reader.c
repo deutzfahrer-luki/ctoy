@@ -9,7 +9,7 @@
 
 
 // which Programm:
-#define SIGNLE_DRAW_PICTURE 1
+#define SIGNLE_DRAW_PICTURE 0
 #define ANIMATION_DRAW_PICTURE !SIGNLE_DRAW_PICTURE
 
 
