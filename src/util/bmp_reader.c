@@ -1,5 +1,5 @@
 #include <ctoy.h>
-#include <stdio.h> // optional (stdio.h is already included in ctoy.h)
+#include <stdio.h> 
 
 // debugging!!!
 #define DEBUGG_MEMPTR_READ 1
