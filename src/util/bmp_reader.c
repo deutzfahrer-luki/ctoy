@@ -2,12 +2,31 @@
 #include <stdio.h> 
 
 // debugging!!!
-#define DEBUGG_MEMPTR_READ 1
-#define DEBUGG_BMP_HEADER_READ 1
-#define DEBUGG_BMP_INFO_HEADER_READ 1
+#define DEBUGG_MEMPTR_READ 0
+#define DEBUGG_BMP_HEADER_READ 0
+#define DEBUGG_BMP_INFO_HEADER_READ 0
+#define DEBUGG_DRAW_ANIMATION 0
+
+
+// which Programm:
+#define SIGNLE_DRAW_PICTURE 1
+#define ANIMATION_DRAW_PICTURE !SIGNLE_DRAW_PICTURE
+
 
 // constants
 #define COMP 3
+#define SCALE 10
+
+// dimensions
+#define FRAME_WIDTH 8
+#define FRAME_HEIGHT 8
+#define TOTAL_FRAMES 27
+#define FRAME_DELAY 1.0f
+
+
+// index Frame
+uint32_t frameIndex = 0;
+
 
 struct m_image framebuffer = M_IMAGE_IDENTITY(); // initialize the struct (all set to zero in this case)
 
@@ -48,6 +67,7 @@ typedef struct {
 #pragma pack(pop)
 BMPInfoHeader *bmpInfoHeader = NULL;
 
+MEMPTR mem;
 
 // every func in code:
 MEMPTR readFileToMemory(const char *filename);
@@ -56,6 +76,7 @@ void printHead();
 void assInfoHead(void *ptr);
 void printInfoHead();
 void drawSingleImage(MEMPTR *data);
+void DrawAnimation(MEMPTR *data, int32_t frWidth, int32_t frHeight, uint32_t frIndex, uint32_t numFrames);
 
 // Read file section
 MEMPTR readFileToMemory(const char *filename) {
@@ -189,14 +210,42 @@ void drawSingleImage(MEMPTR *data)
    ctoy_swap_buffer(&framebuffer);
 }
 
+void DrawAnimation(MEMPTR *data, int32_t frWidth, int32_t frHeight, uint32_t frIndex, uint32_t numFrames)
+{
+   int framesPerRow = bmpInfoHeader->biWidth / frWidth;
+   int row = (numFrames / framesPerRow - 1) - (frIndex / framesPerRow);
+   int col = frIndex % framesPerRow;
+
+   #if DEBUGG_DRAW_ANIMATION == 1
+   printf("framePerRow: %d\n", framesPerRow);
+   printf("col: %d\n", col);
+   #endif
+
+   uint8_t *frameStart = data->ptr + bmpHeader->OffBits + (row * frHeight * bmpInfoHeader->biWidth + col * frWidth) * COMP;
+
+   m_image_create(&framebuffer, M_UBYTE, frWidth, frHeight, COMP);
+
+   for (size_t y = 0; y < frHeight; y++) {
+      for (size_t x = 0; x < frWidth; x++) {
+         uint8_t *fbpixel = framebuffer.data + (frWidth * y + x) * COMP;
+         uint8_t *pixel = frameStart + (frHeight - 1 - y) * bmpInfoHeader->biWidth * COMP + x * COMP;
+         
+         fbpixel[0] = pixel[2];
+         fbpixel[1] = pixel[1];
+         fbpixel[2] = pixel[0];
+      }
+   }
+
+}
+
 
 // ctoy section
 void ctoy_begin(void)
 {
-   printf("\nHello World!\n");
-   ctoy_window_title("Hello-World!");
+   printf("Hello World!\n");
+   ctoy_window_title("Tetris");
 
-   MEMPTR mem = readFileToMemory("data/tetris.bmp");
+   mem = readFileToMemory("data/tetris.bmp");
    if (mem.ptr == NULL) {
       printf("data/tetris.bmp not found\n");
       return;
@@ -213,7 +262,11 @@ void ctoy_begin(void)
       return;
    }
 
+   #if SIGNLE_DRAW_PICTURE == 1
    drawSingleImage(&mem);
+   #endif
+
+   ctoy_window_size(800, 800);
 }
 
 
@@ -223,4 +276,11 @@ void ctoy_end(void)
 }
 
 void ctoy_main_loop(void)
-{}
+{
+   #if ANIMATION_DRAW_PICTURE == 1
+   ctoy_swap_buffer(&framebuffer);
+   DrawAnimation(&mem, FRAME_WIDTH, FRAME_HEIGHT, frameIndex, TOTAL_FRAMES);
+   frameIndex = (frameIndex + 1) % TOTAL_FRAMES;
+   ctoy_sleep(FRAME_DELAY, 0);
+   #endif
+}
