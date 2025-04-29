@@ -1,5 +1,5 @@
 
-#define CTOY_SAMPLE 9
+#define CTOY_SAMPLE 10
 
 // samples
 #if CTOY_SAMPLE == 1
@@ -28,5 +28,8 @@
 
 #elif CTOY_SAMPLE == 9
 #include "util/koala_reader.c"
+
+#elif CTOY_SAMPLE == 10
+#include "util/dff_reader.c"
 
 #endif
