@@ -261,14 +261,12 @@ void loadData()
 }
 
 
-
-
 // ctoy section
 void ctoy_begin(void)
 {
    printf("Hello World!\n");
    ctoy_window_title("Tetris");
-   
+
    loadData();
 
    #if SIGNLE_DRAW_PICTURE == 1
